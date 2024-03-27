@@ -3,20 +3,20 @@ Converts CLIP models to ONNX
 
 # Convert models to ONNX
 ## Visual
-`python -m model_conversion.to_onnx_visual -m "ViT-L/14" -o v.onnx`
+`python -m model_conversion.to_onnx_visual -m "ViT-B/16" -o v.onnx`
 
 ## Textual
-`python -m model_conversion.to_onnx_textual -m "ViT-L/14" -o t.onnx`
+`python -m model_conversion.to_onnx_textual -m "ViT-B/16" -o t.onnx`
 
-## Multi langual textual
-`python -m model_conversion.to_onnx_multi_textual -o mt.onnx -t t.pt`
+<!-- ## Multi langual textual
+`python -m model_conversion.to_onnx_multi_textual -o mt.onnx -t t.pt` -->
 
 # Benchmark
-`python -m model_conversion.benchmark_visual -m "ViT-L/14" -p v.onnx -n 50`
-`python -m model_conversion.benchmark_textual -m "ViT-L/14" -p t.onnx -n 50`
+`python -m model_conversion.benchmark_visual -m "ViT-B/16" -p v.onnx -n 50`
+`python -m model_conversion.benchmark_textual -m "ViT-B/16" -p t.onnx -n 50`
 
 
-Average over 50 iteration
+<!-- Average over 50 iteration
 
 ## 2080Ti
 
@@ -56,4 +56,4 @@ Average over 50 iteration
 | Pytorch GPU fp32  |0.038+-0.011|0.021+-0.008|0.031+-0.017|
 | Pytorch GPU fp16  |0.061+-0.022|0.028+-0.009|0.087+-0.045|
 | ONNX CPU  |4.070+-1.286|0.364+-0.116|3.906+-2.229|
-| ONNX GPU  ||||
+| ONNX GPU  |||| -->
