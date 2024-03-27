@@ -9,7 +9,7 @@ import torch
 from onnxsim import simplify
 from torch import nn
 
-from model_conversion.utils import DEFAULT_EXPORT, SIZES, onnx_checker
+from model_conversion.utils import DEFAULT_EXPORT, onnx_checker
 
 
 def convert_visual(model: nn.Module, dummy_input: torch.Tensor, visual_path: str) -> None:
@@ -20,7 +20,7 @@ def convert_visual(model: nn.Module, dummy_input: torch.Tensor, visual_path: str
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
-    arg("-m", "--model", type=str, help="Path to model.", required=True, choices=SIZES.keys())
+    arg("-m", "--model", type=str, help="Path to model.", required=True)
     arg("-o", "--output_path", type=Path, help="Path to save visual component of the model", required=True)
     return parser.parse_args()
 
@@ -32,9 +32,7 @@ def main() -> None:
 
     output_path = args.output_path
 
-    size = SIZES[args.model]
-
-    dummy_input_image = torch.randn(1, 3, size, size)
+    dummy_input_image = torch.randn(1, 3, 224, 224)
 
     print("Converting")
     convert_visual(model, dummy_input_image, output_path)
@@ -44,6 +42,21 @@ def main() -> None:
     print("Simplifying")
 
     model_simp_visual, visual_check = simplify(visual_model_onnx)
+    
+    # # 遍历模型的所有初始izers和权重
+    # for initializer in model_simp_visual.graph.initializer:
+    #     if initializer.data_type == onnx.TensorProto.INT64:
+    #         # 打印 INT64 类型的参数
+    #         print(f'Initializer "{initializer.name}" is of type INT64')
+        
+    #         # 判断是否可以转换为 INT32
+    #         # 这通常意味着检查所有数值是否在INT32的范围内(-2^31 to 2^31 - 1)
+    #         values_in_range = all(-2**31 <= v <= 2**31 - 1 for v in initializer.int64_data)
+    #         if values_in_range:
+    #             print(f'The values in "{initializer.name}" can be safely converted to INT32.')
+    #         else:
+    #             print(f'The values in "{initializer.name}" may not be safely converted to INT32 due to overflow.')
+    
 
     if not visual_check:
         raise ValueError("Simplified ONNX model could not be validated")
@@ -51,7 +64,7 @@ def main() -> None:
     print("Saving simplified")
     onnx.save(model_simp_visual, output_path)  # type: ignore
 
-    ort_sess_visual = ort.InferenceSession(model_simp_visual.SerializeToString(), providers=["CUDAExecutionProvider"])
+    ort_sess_visual = ort.InferenceSession(model_simp_visual.SerializeToString(), providers=["CPUExecutionProvider"])
 
     image_onnx = dummy_input_image.detach().cpu().numpy().astype(np.float32)
     input_name = ort_sess_visual.get_inputs()[0].name

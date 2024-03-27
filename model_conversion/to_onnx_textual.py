@@ -9,7 +9,7 @@ import torch
 from onnxsim import simplify
 from torch import nn
 
-from model_conversion.utils import DEFAULT_EXPORT, SIZES, Textual, onnx_checker
+from model_conversion.utils import DEFAULT_EXPORT, Textual, onnx_checker
 
 
 def convert_textual(model: nn.Module, dummy_input: torch.Tensor, textual_path: str) -> None:
@@ -21,7 +21,7 @@ def convert_textual(model: nn.Module, dummy_input: torch.Tensor, textual_path: s
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
-    arg("-m", "--model", type=str, help="Path to model.", required=True, choices=SIZES.keys())
+    arg("-m", "--model", type=str, help="Path to model.", required=True)
     arg("-o", "--output_path", type=Path, help="Path to save textual component of the model", required=True)
     return parser.parse_args()
 
@@ -30,6 +30,7 @@ def main() -> None:
     args = get_args()
     print("Loading the model")
     model, _ = clip.load(args.model, "cpu")
+
 
     output_path = args.output_path
 
@@ -41,14 +42,14 @@ def main() -> None:
 
     print("Simplifying")
     model_simp_textual, textual_check = simplify(textual_model_onnx)
-
+    
     if not textual_check:
         raise ValueError("Simplified ONNX model could not be validated")
 
     with torch.inference_mode():
         default_textual_output = model.encode_text(dummy_input_text)
 
-    ort_sess_visual = ort.InferenceSession(model_simp_textual.SerializeToString(), providers=["CUDAExecutionProvider"])
+    ort_sess_visual = ort.InferenceSession(model_simp_textual.SerializeToString(), providers=["CPUExecutionProvider"])
 
     input_name = ort_sess_visual.get_inputs()[0].name
 
